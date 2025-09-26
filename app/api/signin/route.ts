@@ -4,13 +4,23 @@ import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    // Parse JSON safely
+    const body = await request.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
+    }
+
+    const { email, password } = body;
+
+    if (!email || !password) {
+      return NextResponse.json({ message: "Email and password are required" }, { status: 400 });
+    }
 
     const client = await clientPromise;
     const db = client.db("agroSikkim");
     const user = await db.collection("users").findOne({ email });
 
-    if (!user) {
+    if (!user || !user.password) {
       return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
     }
 
@@ -19,15 +29,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
     }
 
-    // optional: create a JWT if you plan to store it in cookies or headers
-    // const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, { expiresIn: "1d" });
+    // optional: JWT creation here
 
-    return NextResponse.json({
-      message: "Signed in successfully",
-      // token   // uncomment if using JWT
-    });
+    return NextResponse.json({ message: "Signed in successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("Signin error:", err);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

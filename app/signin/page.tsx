@@ -1,46 +1,22 @@
 "use client";
-
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, Leaf, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+
 
 export default function SignIn() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    const res = await fetch("/api/signin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    if (res.ok) {
-
-
-      router.push("/dashboard");
-    } else {
-      const text = await res.text();
-      let msg = "Sign in failed";
-      try {
-        const data = JSON.parse(text);
-        msg = data.message || msg;
-      } catch {}
-      alert(msg);
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Something went wrong");
-  }
-};
-
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Redirect to /dashboard
+    router.push("/dashboard");
   };
 
   return (
@@ -56,11 +32,10 @@ const handleSubmit = async (e: React.FormEvent) => {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
-        onClick={() => router.push("/")}
         className="absolute top-6 left-6 flex items-center gap-2 text-green-600 hover:text-green-700 transition-colors z-10"
       >
         <ArrowLeft className="w-5 h-5" />
-        Back to Home
+        Back
       </motion.button>
 
       <div className="flex items-center justify-center min-h-screen p-6">
@@ -85,7 +60,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
               Welcome Back
             </h1>
-            <p className="text-gray-600 mt-2">Sign in to your AgroSikkim account</p>
+            <p className="text-gray-600 mt-2">Sign in to your account</p>
           </div>
 
           {/* Form */}
@@ -173,10 +148,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div className="text-center mt-6">
               <p className="text-gray-600">
                 Don’t have an account?{" "}
-                <button
-                  onClick={() => router.push("/signup")}
-                  className="text-green-600 hover:text-green-700 font-semibold transition-colors"
-                >
+                <button className="text-green-600 hover:text-green-700 font-semibold transition-colors">
                   Sign up
                 </button>
               </p>

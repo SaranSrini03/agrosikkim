@@ -3,9 +3,6 @@
 import React, { useState } from "react";
 import { JSX } from "react/jsx-dev-runtime";
 
-// Default export React component (TypeScript)
-// Tailwind is used for styling. This is a single-file dashboard UI mock for the 8-step workflow.
-
 type Sensor = {
   id: string;
   name: string;
@@ -30,14 +27,26 @@ export default function AgroDashboard(): JSX.Element {
     "Tank scheduled refill at 18:00",
   ]);
 
+  // New state for motor run
+  const [motorRuntime, setMotorRuntime] = useState<number>(0); // in minutes
+  const [waterSupplied, setWaterSupplied] = useState<number>(0); // %
+  const [totalWater, setTotalWater] = useState<number>(100); // total water available %
+
   function toggleIrrigation() {
+    if (irrigationOn) {
+      // Stopping the motor
+      const duration = Math.floor(Math.random() * 15 + 5); // simulate runtime 5-20 mins
+      setMotorRuntime(duration);
+      const supplied = Math.min(totalWater, waterSupplied + duration); // simple simulation
+      setWaterSupplied(supplied);
+    }
     setIrrigationOn((v) => !v);
+
     const note = irrigationOn ? "Irrigation stopped manually" : "Irrigation started manually";
     setAlerts((a) => [note, ...a].slice(0, 6));
   }
 
   function simulateSensorChange() {
-    // simple mock: randomly change a sensor value
     setSensors((prev) =>
       prev.map((s) => {
         if (s.id === "s1") {
@@ -193,230 +202,72 @@ export default function AgroDashboard(): JSX.Element {
                     </svg>
                     Water Tank
                   </h3>
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Monitoring</span>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{sensors.find(s => s.name === "Tank Level")?.value}%</span>
                 </div>
-                
-                <div className="flex flex-col items-center justify-center py-2 sm:py-4">
-                  <div className="relative">
-                    {/* Tank Visualization */}
-                    <div className="w-20 h-28 sm:w-24 sm:h-32 md:w-32 md:h-40 bg-gray-200 rounded-t-lg rounded-b-sm border-4 border-gray-300 relative overflow-hidden">
-                      <div 
-                        className="absolute bottom-0 w-full bg-gradient-to-t from-blue-400 to-blue-600 transition-all duration-500"
-                        style={{ height: `${sensors.find((s) => s.id === "s3")!.value}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-center mt-2 sm:mt-4">
-                      <div className="text-xl sm:text-2xl font-bold text-blue-600">{sensors.find((s) => s.id === "s3")!.value}%</div>
-                      <div className="text-xs sm:text-sm text-gray-600">Current Level</div>
-                    </div>
-                  </div>
+                <div className="relative h-24 sm:h-32 bg-gray-100 rounded-lg overflow-hidden">
+                  <div
+                    className="absolute bottom-0 left-0 w-full bg-blue-500 transition-all duration-500"
+                    style={{ height: `${sensors.find(s => s.name === "Tank Level")?.value}%` }}
+                  ></div>
                 </div>
               </div>
 
-              {/* Crop DB & Irrigation Advice */}
+              {/* Irrigation Control Card */}
               <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg border border-white p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
                   <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-3.314 0-6 2.686-6 6v2h12v-2c0-3.314-2.686-6-6-6z" />
                     </svg>
-                    Smart Irrigation
+                    Irrigation Control
                   </h3>
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Active</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${irrigationOn ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}>
+                    {irrigationOn ? "Running" : "Stopped"}
+                  </span>
                 </div>
-                
-                <div className="space-y-3 sm:space-y-4">
-                  <div>
-                    <div className="text-xs sm:text-sm font-medium text-gray-900 mb-2">Recommendations for {selectedCrop}</div>
-                    <div className="space-y-1 sm:space-y-2">
-                      <div className="flex justify-between text-xs sm:text-sm">
-                        <span className="text-gray-600">Optimal moisture:</span>
-                        <span className="font-medium">40–60%</span>
-                      </div>
-                      <div className="flex justify-between text-xs sm:text-sm">
-                        <span className="text-gray-600">Next irrigation:</span>
-                        <span className="font-medium">18:00 Today</span>
-                      </div>
-                      <div className="flex justify-between text-xs sm:text-sm">
-                        <span className="text-gray-600">Duration:</span>
-                        <span className="font-medium">15 minutes</span>
-                      </div>
+                <button
+                  onClick={toggleIrrigation}
+                  className={`w-full py-2 sm:py-3 rounded-lg font-medium transition-colors ${
+                    irrigationOn ? "bg-red-500 text-white hover:bg-red-600" : "bg-green-500 text-white hover:bg-green-600"
+                  }`}
+                >
+                  {irrigationOn ? "Stop Irrigation" : "Start Irrigation"}
+                </button>
+
+                {/* Display motor runtime & water stats */}
+                {!irrigationOn && motorRuntime > 0 && (
+                  <div className="mt-3 p-2 bg-blue-50/50 rounded-lg text-xs sm:text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span>Motor Run Duration:</span>
+                      <span className="font-medium">{motorRuntime} mins</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Water Supplied:</span>
+                      <span className="font-medium">{waterSupplied}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Remaining Water:</span>
+                      <span className="font-medium">{Math.max(0, totalWater - waterSupplied)}%</span>
                     </div>
                   </div>
-                  
-                  <div className="bg-green-50/50 rounded-lg p-2 sm:p-3">
-                    <div className="text-xs text-green-700 font-medium">💡 Smart Tip</div>
-                    <div className="text-xs text-green-600 mt-1">Ideal conditions detected for automated watering cycle</div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </section>
 
-          {/* Right column: controls, alerts, yield */}
+          {/* Right column: Alerts */}
           <aside className="lg:col-span-4 space-y-4 sm:space-y-6">
-            {/* Irrigation Control */}
             <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg border border-white p-4 sm:p-6">
-              <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Irrigation Control
-              </h3>
-              
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-center justify-between p-2 sm:p-3 bg-gray-50/50 rounded-lg">
-                  <div className="min-w-0">
-                    <div className="font-medium text-sm sm:text-base">Field A Zone 1</div>
-                    <div className="text-xs sm:text-sm text-gray-600 truncate">Status: <span className={irrigationOn ? "text-green-600 font-medium" : "text-gray-600"}>
-                      {irrigationOn ? "Active" : "Inactive"}
-                    </span></div>
-                  </div>
-                  <button
-                    onClick={toggleIrrigation}
-                    className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium transition-all duration-200 text-xs sm:text-sm ml-2 ${
-                      irrigationOn 
-                        ? "bg-red-500 hover:bg-red-600 text-white" 
-                        : "bg-green-500 hover:bg-green-600 text-white"
-                    }`}
-                  >
-                    {irrigationOn ? "Stop" : "Start"}
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <button className="p-2 sm:p-3 bg-blue-50/50 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-100/50 transition-colors">
-                    Schedule
-                  </button>
-                  <button className="p-2 sm:p-3 bg-blue-50/50 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-100/50 transition-colors">
-                    Zones Setup
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Alerts Panel */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg border border-white p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  System Alerts
-                </h3>
-                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">{alerts.length} New</span>
-              </div>
-              
-              <div className="h-32 sm:h-48 space-y-2 overflow-y-auto">
-                {alerts.length > 0 ? (
-                  alerts.map((a, idx) => (
-                    <div key={idx} className="p-2 sm:p-3 bg-orange-50/50 border-l-4 border-orange-500 rounded-r-lg">
-                      <div className="text-xs sm:text-sm font-medium">Alert</div>
-                      <div className="text-xs text-gray-600 mt-1">{a}</div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center text-gray-500 py-4 sm:py-8">
-                    <div className="w-8 h-8 sm:w-12 sm:h-12 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-3">
-                      <svg className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="text-xs sm:text-sm">All systems operational</div>
-                  </div>
-                )}
-              </div>
-              
-              {alerts.length > 0 && (
-                <button
-                  onClick={() => setAlerts([])}
-                  className="w-full mt-2 sm:mt-3 px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-200 rounded-lg hover:bg-gray-50/50 transition-colors text-xs sm:text-sm"
-                >
-                  Clear All Alerts
-                </button>
-              )}
-            </div>
-
-            {/* Yield Summary */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg border border-white p-4 sm:p-6">
-              <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                <svg className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Yield Analytics
-              </h3>
-              
-              <div className="space-y-3 sm:space-y-4">
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="text-center p-2 sm:p-3 bg-green-50/50 rounded-lg">
-                    <div className="text-lg sm:text-2xl font-bold text-green-600">+6%</div>
-                    <div className="text-xs text-gray-600">Yield Increase</div>
-                  </div>
-                  <div className="text-center p-2 sm:p-3 bg-blue-50/50 rounded-lg">
-                    <div className="text-lg sm:text-2xl font-bold text-blue-600">25%</div>
-                    <div className="text-xs text-gray-600">Water Saved</div>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50/50 rounded-lg p-2 sm:p-3">
-                  <div className="flex justify-between text-xs sm:text-sm mb-2">
-                    <span className="text-gray-600">Weekly Progress</span>
-                    <span className="font-medium">68% Complete</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '68%' }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg border border-white p-4 sm:p-6">
-              <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                <svg className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Quick Actions
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                <button className="p-2 sm:p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors flex items-center gap-2 text-xs sm:text-sm">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Export Report
-                </button>
-                <button className="p-2 sm:p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors flex items-center gap-2 text-xs sm:text-sm">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  </svg>
-                  Remote Control
-                </button>
-                <button className="p-2 sm:p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors flex items-center gap-2 text-xs sm:text-sm">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Schedule Fill
-                </button>
-                <button className="p-2 sm:p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors flex items-center gap-2 text-xs sm:text-sm">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  Analytics
-                </button>
-              </div>
+              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Alerts & Notifications</h3>
+              <ul className="space-y-2 max-h-64 overflow-y-auto">
+                {alerts.map((a, i) => (
+                  <li key={i} className="text-xs sm:text-sm p-2 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">{a}</li>
+                ))}
+              </ul>
             </div>
           </aside>
         </div>
       </main>
-
-      <footer className="max-w-7xl mx-auto mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-500">
-        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 sm:p-4 border border-white">
-          AgroSikkim Farm Management System • Last updated: {new Date().toLocaleDateString()} • 
-          <span className="text-green-600 font-medium ml-1">All systems operational</span>
-        </div>
-      </footer>
     </div>
   );
 }
