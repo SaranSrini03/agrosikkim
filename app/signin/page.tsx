@@ -147,12 +147,16 @@ export default function SignIn() {
             {/* Link to Sign Up */}
             <div className="text-center mt-6">
               <p className="text-gray-600">
-                Don’t have an account?{" "}
-                <button className="text-green-600 hover:text-green-700 font-semibold transition-colors">
+                Dont have an account?{" "}
+                <button
+                  onClick={() => router.push("/signup")}
+                  className="text-green-600 hover:text-green-700 font-semibold transition-colors"
+                >
                   Sign up
                 </button>
               </p>
             </div>
+
           </motion.div>
         </motion.div>
       </div>
